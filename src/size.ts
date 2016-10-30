@@ -3,7 +3,7 @@ import { dispatch } from 'd3-dispatch';
 import { scaleLinear } from 'd3-scale';
 import { format } from 'd3-format';
 import { sum, max } from 'd3-array';
-
+import { SizeLegend } from './types';
 export default function size(){
 
   var scale = scaleLinear(),
@@ -24,7 +24,7 @@ export default function size(){
     path,
     legendDispatcher = dispatch("cellover", "cellout", "cellclick");
 
-    function legend(svg){
+    const legend = <SizeLegend>function(svg) {
 
       var type = helper.d3_calcType(scale, ascending, cells, labels, labelFormat, labelDelimiter),
         legendG = svg.selectAll('g').data([scale]);
@@ -72,8 +72,8 @@ export default function size(){
             return bbox;
         });
 
-      var maxH = max(shapeSize, function(d){ return d.height + d.y; }),
-      maxW = max(shapeSize, function(d){ return d.width + d.x; });
+      var maxH = max(shapeSize, (d: {y: number, height: number}) => d.height + d.y);
+      var maxW = max(shapeSize, (d: {width: number, x: number}) => d.width + d.x);
 
       var cellTrans,
       textTrans,
@@ -83,7 +83,7 @@ export default function size(){
       if (orient === "vertical"){
 
         cellTrans = function(d,i) {
-            var height = sum(shapeSize.slice(0, i + 1 ), function(d){ return d.height; });
+            var height = sum(shapeSize.slice(0, i + 1 ), (d: {height: number}) => d.height);
             return "translate(0, " + (height + i*shapePadding) + ")"; };
 
         textTrans = function(d,i) { return "translate(" + (maxW + labelOffset) + "," +
@@ -91,7 +91,7 @@ export default function size(){
 
       } else if (orient === "horizontal"){
         cellTrans = function(d,i) {
-            var width = sum(shapeSize.slice(0, i + 1 ), function(d){ return d.width; });
+            var width = sum(shapeSize.slice(0, i + 1 ), (d :{width: number}) => d.width);
             return "translate(" + (width + i*shapePadding) + ",0)"; };
 
         textTrans = function(d,i) { return "translate(" + (shapeSize[i].width*textAlign  + shapeSize[i].x) + "," +

@@ -19,7 +19,7 @@ export default {
         const genLength = gen.length
         for (let i=0; i < genLength; i++){
           customLabels.push(labels({
-            i, 
+            i,
             genLength,
             generatedLabels : gen,
             domain,
@@ -74,7 +74,7 @@ export default {
             feature: function(d){ return scale(d); }};
   },
 
-  d3_drawShapes: function (shape, shapes, shapeHeight, shapeWidth, shapeRadius, path) {
+  d3_drawShapes: function (shape, shapes, shapeHeight, shapeWidth, shapeRadius?, path?) {
     if (shape === "rect"){
         shapes.attr("height", shapeHeight).attr("width", shapeWidth);
 

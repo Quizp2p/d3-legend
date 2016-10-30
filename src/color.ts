@@ -2,30 +2,31 @@ import helper from './legend';
 import { dispatch } from 'd3-dispatch';
 import { scaleLinear } from 'd3-scale';
 import { format } from 'd3-format';
-import { max } from 'd3-array';
+import { ColorLegend } from './types';
 
-export default function symbol(){
+const color = function(){
 
   var scale = scaleLinear(),
-    shape = "path",
+    shape = "rect",
     shapeWidth = 15,
     shapeHeight = 15,
     shapeRadius = 10,
-    shapePadding = 5,
+    shapePadding = 2,
     cells = [5],
     labels = [],
     classPrefix = "",
     useClass = false,
     title = "",
     labelFormat = format(".01f"),
-    labelAlign = "middle",
     labelOffset = 10,
+    labelAlign = "middle",
     labelDelimiter = "to",
     orient = "vertical",
     ascending = false,
+    path,
     legendDispatcher = dispatch("cellover", "cellout", "cellclick");
 
-    function legend(svg){
+    const legend = <ColorLegend>function(svg){
 
       var type = helper.d3_calcType(scale, ascending, cells, labels, labelFormat, labelDelimiter),
         legendG = svg.selectAll('g').data([scale]);
@@ -35,17 +36,18 @@ export default function symbol(){
       var cell = svg.select('.' + classPrefix + 'legendCells')
           .selectAll("." + classPrefix + "cell").data(type.data),
         cellEnter = cell.enter().append("g")
-          .attr("class", classPrefix + "cell"),//.style("opacity", 1e-6),
+          .attr("class", classPrefix + "cell"),//.merge(cell).style("opacity", 1e-6),
         shapeEnter = cellEnter.append(shape).attr("class", classPrefix + "swatch"),
         shapes = svg.selectAll("g." + classPrefix + "cell " + shape);
 
       //add event handlers
       helper.d3_addEvents(cellEnter, legendDispatcher);
 
-      //remove old shapes
       cell.exit().transition().style("opacity", 0).remove();
 
-      helper.d3_drawShapes(shape, shapes, shapeHeight, shapeWidth, shapeRadius, type.feature);
+      helper.d3_drawShapes(shape, shapes, shapeHeight, shapeWidth, shapeRadius, path);
+
+
       helper.d3_addText( svg, cellEnter, type.labels, classPrefix)
 
       // we need to merge the selection, otherwise changes in the legend (e.g. change of orientation) are applied only to the new cells and not the existing ones.
@@ -55,8 +57,17 @@ export default function symbol(){
       var text = cell.selectAll("text"),
         shapeSize = shapes.nodes().map( function(d){ return d.getBBox(); });
 
-      var maxH = max(shapeSize, function(d){ return d.height; }),
-      maxW = max(shapeSize, function(d){ return d.width; });
+      //sets scale
+      //everything is fill except for line which is stroke,
+      if (!useClass){
+        if (shape == "line"){
+          shapes.style("stroke", type.feature);
+        } else {
+          shapes.style("fill", type.feature);
+        }
+      } else {
+        shapes.attr("class", function(d){ return classPrefix + "swatch " + type.feature(d); });
+      }
 
       var cellTrans,
       textTrans,
@@ -64,21 +75,23 @@ export default function symbol(){
 
       //positions cells and text
       if (orient === "vertical"){
-        cellTrans = function(d,i) { return "translate(0, " + (i * (maxH + shapePadding)) + ")"; };
-        textTrans = function(d,i) { return "translate(" + (maxW + labelOffset) + "," +
-              (shapeSize[i].y + shapeSize[i].height/2 + 5) + ")"; };
+        cellTrans = function(d,i) { return "translate(0, " + (i * (shapeSize[i].height + shapePadding)) + ")"; };
+        textTrans = function(d,i) { return "translate(" + (shapeSize[i].width + shapeSize[i].x +
+          labelOffset) + "," + (shapeSize[i].y + shapeSize[i].height/2 + 5) + ")"; };
 
       } else if (orient === "horizontal"){
-        cellTrans = function(d,i) { return "translate(" + (i * (maxW + shapePadding)) + ",0)"; };
-        textTrans = function(d,i) { return "translate(" + (shapeSize[i].width*textAlign  + shapeSize[i].x) + "," +
-              (maxH + labelOffset ) + ")"; };
+        cellTrans = function(d,i) { return "translate(" + (i * (shapeSize[i].width + shapePadding)) + ",0)"; }
+        textTrans = function(d,i) { return "translate(" + (shapeSize[i].width*textAlign  + shapeSize[i].x) +
+          "," + (shapeSize[i].height + shapeSize[i].y + labelOffset + 8) + ")"; };
       }
 
       helper.d3_placement(orient, cell, cellTrans, text, textTrans, labelAlign);
       helper.d3_title(svg, title, classPrefix);
+
       cell.transition().style("opacity", 1);
 
     }
+
 
 
   legend.scale = function(_) {
@@ -92,6 +105,33 @@ export default function symbol(){
     if (_.length > 1 || _ >= 2 ){
       cells = _;
     }
+    return legend;
+  };
+
+  legend.shape = function(_, d) {
+    if (!arguments.length) return shape;
+    if (_ == "rect" || _ == "circle" || _ == "line" || (_ == "path" && (typeof d === 'string')) ){
+      shape = _;
+      path = d;
+    }
+    return legend;
+  };
+
+  legend.shapeWidth = function(_) {
+    if (!arguments.length) return shapeWidth;
+    shapeWidth = +_;
+    return legend;
+  };
+
+  legend.shapeHeight = function(_) {
+    if (!arguments.length) return shapeHeight;
+    shapeHeight = +_;
+    return legend;
+  };
+
+  legend.shapeRadius = function(_) {
+    if (!arguments.length) return shapeRadius;
+    shapeRadius = +_;
     return legend;
   };
 
@@ -133,6 +173,14 @@ export default function symbol(){
     return legend;
   };
 
+  legend.useClass = function(_) {
+    if (!arguments.length) return useClass;
+    if (_ === true || _ === false){
+      useClass = _;
+    }
+    return legend;
+  };
+
   legend.orient = function(_){
     if (!arguments.length) return orient;
     _ = _.toLowerCase();
@@ -168,3 +216,5 @@ export default function symbol(){
   return legend;
 
 };
+
+export default color;

@@ -1,6 +1,5 @@
 var stringify = require('stringify');
 
-
 module.exports = function(grunt){
 
 // configure plugins
@@ -8,7 +7,7 @@ grunt.initConfig({
   browserify: {
     dist: {
       files: {
-        'd3-legend.js': ['src/web.js'],
+        'd3-legend.js': ['compiled/web.js'],
       },
       options: {
         browserifyOptions: { debug: true },
